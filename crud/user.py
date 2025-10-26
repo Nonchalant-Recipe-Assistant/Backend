@@ -19,7 +19,7 @@ def create_user(db: Session, user: UserCreate):
 def get_user(db: Session, user_id: int):
     user = db.query(User).filter(User.user_id == user_id).first()
     if user:
-        logger.info(f"User retrieved: id={user.user_id}, email={user.email}")
+        logger.info(f"User fetched: id={user.user_id}")
     else:
         logger.warning(f"User not found: id={user_id}")
     return user
@@ -27,7 +27,7 @@ def get_user(db: Session, user_id: int):
 def update_user(db: Session, user_id: int, user_data: UserUpdate):
     user = db.query(User).filter(User.user_id == user_id).first()
     if not user:
-        logger.warning(f"User update failed, not found: id={user_id}")
+        logger.warning(f"Attempt to update non-existent user id={user_id}")
         return None
     if user_data.email:
         user.email = user_data.email
@@ -43,7 +43,7 @@ def update_user(db: Session, user_id: int, user_data: UserUpdate):
 def delete_user(db: Session, user_id: int):
     user = db.query(User).filter(User.user_id == user_id).first()
     if not user:
-        logger.warning(f"User delete failed, not found: id={user_id}")
+        logger.warning(f"Attempt to delete non-existent user id={user_id}")
         return None
     db.delete(user)
     db.commit()

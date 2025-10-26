@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app import schemas
 from app.database import SessionLocal
 from app.services import UserService
+from app.crud.user_crud import UserRepository
 
 router = APIRouter(prefix="/users", tags=["Users"])
 

@@ -7,11 +7,9 @@ class Role(Base):
     __table_args__ = {'extend_existing': True}
 
     role_id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(50), unique=True, nullable=False)
+    name = Column(String(50), unique=True, nullable=False)  # Убедись что поле называется name
 
     users = relationship("User", back_populates="role")
-
-
 
 class User(Base):
     __tablename__ = "users"

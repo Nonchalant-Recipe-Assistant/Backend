@@ -7,6 +7,21 @@ __pycache__
 # C extensions
 *.so
 
+# Базы данных
+*.db
+*.sqlite3
+*_test  # тестовые базы MySQL
+
+# Логи
+log/
+*.log
+*.log.*
+
+# Тестовые кэши
+.pytest_cache/
+.coverage
+htmlcov/
+
 # Distribution / packaging
 .Python
 build/
@@ -83,6 +98,14 @@ target/
 # IPython
 profile_default/
 ipython_config.py
+
+# Миграции (если будешь использовать alembic)
+migrations/
+alembic.ini
+
+# Статические файлы (если будешь собирать)
+staticfiles/
+mediafiles/
 
 # pyenv
 #   For a library or package, you might want to ignore these files since the code is
@@ -161,6 +184,9 @@ venv.bak/
 .mypy_cache/
 .dmypy.json
 dmypy.json
+
+# Docker
+.dockerignore
 
 # Pyre type checker
 .pyre/

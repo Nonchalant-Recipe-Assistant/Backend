@@ -1,4 +1,4 @@
-from app.crud.user_crud import UserRepository
+from app.crud import UserRepository  # Импортируем из папки crud
 from app import schemas
 from sqlalchemy.orm import Session
 

@@ -1,10 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import SessionLocal, engine
-from app.routers import auth  # Пока уберем users, если он вызывает ошибки
+from app.routers import auth
 from app import models
-from app.crud import get_roles, create_role  # Импортируем из папки crud
-from app.schemas import RoleCreate
+from app.crud import get_roles, create_role
+from app.logger import setup_logging, get_logger  # Добавляем импорт
+
+# Настройка логирования
+setup_logging()
+logger = get_logger(__name__)
 
 # Создаём таблицы, если их нет
 models.Base.metadata.create_all(bind=engine)
@@ -15,18 +19,15 @@ def init_roles():
     try:
         existing_roles = get_roles(db)
         if not existing_roles:
-            roles_to_create = [
-                RoleCreate(name="user"),
-                RoleCreate(name="admin"),
-                RoleCreate(name="moderator"),
-            ]
-            for role_data in roles_to_create:
-                create_role(db, role_data)
-            print("✅ Initial roles created successfully")
+            # Создаем базовые роли
+            create_role(db, "user")
+            create_role(db, "admin")
+            create_role(db, "moderator")
+            logger.info("✅ Initial roles created successfully")
         else:
-            print(f"✅ Roles already exist: {[r.role_name for r in existing_roles]}")
+            logger.info(f"✅ Roles already exist: {[r.name for r in existing_roles]}")
     except Exception as e:
-        print(f"❌ Error initializing roles: {e}")
+        logger.error(f"❌ Error initializing roles: {e}")
     finally:
         db.close()
 
@@ -44,9 +45,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Подключаем маршруты (пока только auth)
+# Подключаем маршруты
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
 
 @app.get("/")
 def root():
+    logger.debug("Root endpoint accessed")
     return {"message": "API is working locally!"}
+
+@app.on_event("startup")
+async def startup_event():
+    logger.info("Application starting up")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    logger.info("Application shutting down")

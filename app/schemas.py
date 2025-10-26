@@ -16,7 +16,6 @@ class UserOut(UserBase):
     class Config:
         from_attributes = True
 
-# Добавляем новые схемы для аутентификации
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
@@ -27,3 +26,19 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     email: Optional[str] = None
+
+# Добавляем схемы для ролей
+class RoleBase(BaseModel):
+    name: str
+
+class RoleCreate(RoleBase):
+    pass
+
+class RoleUpdate(BaseModel):
+    name: Optional[str] = None
+
+class RoleOut(RoleBase):
+    role_id: int
+    
+    class Config:
+        from_attributes = True

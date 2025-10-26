@@ -1,3 +1,4 @@
+version: '3.8'
 
 services:
   db:
@@ -34,6 +35,23 @@ services:
       - "8080:8080"
     command: >
       sh -c "uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload"
+    volumes:
+      - .:/app
+
+  tests:
+    build: .
+    container_name: fastapi_tests
+    environment:
+      DB_USER: devuser
+      DB_PASSWORD: devpass
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: nra_test
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["pytest", "-v", "tests/"]
+    profiles: ["test"]
     volumes:
       - .:/app
 

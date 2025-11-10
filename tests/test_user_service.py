@@ -4,21 +4,19 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-# Добавляем путь к проекту для импортов
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.database import Base
 from app.crud.user import UserRepository
 from app.schemas import UserCreate
 from app.utils import verify_password
-from app.models import Role  # Добавляем импорт модели Role
+from app.models import Role
 
-# Используем ТУ ЖЕ базу данных что и основное приложение
 DB_USER = os.getenv("DB_USER", "devuser")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "devpass")
 DB_HOST = os.getenv("DB_HOST", "db")
 DB_PORT = os.getenv("DB_PORT", "3306")
-DB_NAME = os.getenv("DB_NAME", "nra")  # Используем основную базу
+DB_NAME = os.getenv("DB_NAME", "nra")
 
 def get_test_db_url():
     """Получаем URL для тестовой базы данных"""
@@ -31,7 +29,6 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_
 @pytest.fixture(scope="function")
 def db_session():
     """Создаем сессию для тестов и очищаем таблицы после каждого теста"""
-    # Создаем таблицы (если их нет)
     Base.metadata.create_all(bind=test_engine)
     session = TestingSessionLocal()
     
@@ -46,7 +43,7 @@ def db_session():
     
     yield session
     
-    # Очищаем таблицы после теста (только пользователей, роли оставляем)
+    # Очищаем таблицы после теста (только пользователей)
     session.rollback()
     
     # Удаляем только пользователей, роли не трогаем
@@ -61,7 +58,7 @@ class TestUserRepository:
         """Тест успешного создания пользователя"""
         user_repo = UserRepository(db_session)
         
-        # Получаем первую роль (обычно это user с role_id=1)
+        # Получаем первую роль
         role = db_session.query(Role).first()
         user_data = UserCreate(email="test@example.com", password="testpassword123", role_id=role.role_id)
         
@@ -142,7 +139,7 @@ class TestUserRepository:
     def test_create_user_with_custom_role(self, db_session):
         """Тест создания пользователя с кастомной ролью"""
         user_repo = UserRepository(db_session)
-        # Берем вторую роль (обычно admin)
+        # Берем вторую роль
         roles = db_session.query(Role).all()
         if len(roles) > 1:
             admin_role = roles[1]

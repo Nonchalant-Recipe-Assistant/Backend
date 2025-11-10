@@ -8,7 +8,7 @@ from app.utils import verify_password, create_access_token
 from jose import JWTError, jwt
 from app.config import settings
 from pydantic import BaseModel
-from app.logger import get_logger  # Добавляем импорт
+from app.logger import get_logger 
 
 logger = get_logger(__name__)
 

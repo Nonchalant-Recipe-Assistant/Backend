@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from app.models import User
 from app.schemas import UserCreate
 from app.utils import hash_password
-from app.logger import get_logger  # Добавляем импорт
+from app.logger import get_logger  
 
 logger = get_logger(__name__)
 

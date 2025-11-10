@@ -3,7 +3,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from dotenv import load_dotenv
 
-# Загружаем переменные окружения из .env
 load_dotenv()
 
 DB_USER = os.getenv("DB_USER", "root")
@@ -19,7 +18,6 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 Base = declarative_base()
 
-# Добавляем функцию для получения сессии базы данных
 def get_db():
     db = SessionLocal()
     try:

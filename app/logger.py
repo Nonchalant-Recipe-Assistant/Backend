@@ -5,7 +5,7 @@ from pathlib import Path
 import os
 
 # Создаем папку для логов
-LOG_DIR = Path("/app/log")  # В Docker используем абсолютный путь
+LOG_DIR = Path("/app/log") 
 LOG_DIR.mkdir(exist_ok=True)
 
 # Конфигурация логирования
@@ -25,7 +25,7 @@ def setup_logging():
     file_handler.setFormatter(formatter)
     file_handler.setLevel(logging.INFO)
     
-    # Обработчик для консоли (важно для Docker)
+    # Обработчик для консоли
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(formatter)
     console_handler.setLevel(logging.DEBUG)

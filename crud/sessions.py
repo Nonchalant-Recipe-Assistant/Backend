@@ -32,4 +32,4 @@ def delete_session(db: Session, session_id: int):
     db.delete(session)
     db.commit()
     return session
-  
+

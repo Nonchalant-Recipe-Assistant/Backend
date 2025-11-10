@@ -27,7 +27,6 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     email: Optional[str] = None
 
-# Добавляем схемы для ролей
 class RoleBase(BaseModel):
     name: str
 
@@ -39,6 +38,21 @@ class RoleUpdate(BaseModel):
 
 class RoleOut(RoleBase):
     role_id: int
+    
+    class Config:
+        from_attributes = True
+
+class ChatMessage(BaseModel):
+    text: str
+    message_type: str = "text"  # text, system, etc.
+
+class ChatMessageOut(BaseModel):
+    id: int
+    text: str
+    sender_email: str
+    sender_username: str
+    timestamp: datetime
+    message_type: str = "text"
     
     class Config:
         from_attributes = True

@@ -1,17 +1,35 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, validator
 from datetime import datetime
 from typing import Optional
+import re
 
 class UserBase(BaseModel):
     email: EmailStr
-    role_id: int
 
-class UserCreate(UserBase):
+class UserCreate(BaseModel):
+    email: EmailStr
     password: str
 
-class UserOut(UserBase):
+    @validator('password')
+    def password_strength(cls, v):
+        if len(v) < 6:
+            raise ValueError('Password must be at least 6 characters long')
+        return v
+
+    @validator('email')
+    def email_domain(cls, v):
+        # Простая проверка формата email
+        if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', v):
+            raise ValueError('Invalid email format')
+        return v
+
+class UserOut(BaseModel):
     user_id: int
+    email: EmailStr
+    role_id: int
     created_at: datetime
+    email_verified: bool
+    avatar_url: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -44,7 +62,7 @@ class RoleOut(RoleBase):
 
 class ChatMessage(BaseModel):
     text: str
-    message_type: str = "text"  # text, system, etc.
+    message_type: str = "text"
 
 class ChatMessageOut(BaseModel):
     id: int
@@ -54,5 +72,29 @@ class ChatMessageOut(BaseModel):
     timestamp: datetime
     message_type: str = "text"
     
+    class Config:
+        from_attributes = True
+
+# Схемы для email верификации
+class EmailVerificationRequest(BaseModel):
+    email: EmailStr
+
+class EmailVerificationConfirm(BaseModel):
+    token: str
+
+class UpdateEmailRequest(BaseModel):
+    new_email: EmailStr
+
+class AvatarUpdateResponse(BaseModel):
+    avatar_url: str
+    message: str
+
+class UserProfile(BaseModel):
+    user_id: int
+    email: EmailStr
+    email_verified: bool
+    avatar_url: Optional[str] = None
+    created_at: datetime
+
     class Config:
         from_attributes = True

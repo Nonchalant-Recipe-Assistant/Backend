@@ -13,6 +13,14 @@ class Settings(BaseSettings):
     DB_PORT: str = os.getenv("DB_PORT", "3306")
     DB_NAME: str = os.getenv("DB_NAME", "nra")
     
+    # Email settings
+    RESEND_API_KEY: str = os.getenv("RESEND_API_KEY", "")
+    FROM_EMAIL: str = os.getenv("FROM_EMAIL", "Nonchalant Recipe <onboarding@resend.dev>")
+    BASE_URL: str = os.getenv("BASE_URL", "http://localhost:5173")
+    
+    # Environment
+    ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
+
     class Config:
         env_file = ".env"
 

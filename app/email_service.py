@@ -5,7 +5,7 @@ from app.config import settings
 
 logger = get_logger(__name__)
 
-# Инициализируем Resend
+# Initialize Resend
 resend.api_key = settings.RESEND_API_KEY
 
 class EmailService:
@@ -13,48 +13,8 @@ class EmailService:
         self.from_email = settings.FROM_EMAIL
         self.base_url = settings.BASE_URL
     
-    async def send_verification_email(self, email: str, token: str, email_type: str = "verification"):
-        """Отправляет email для верификации"""
-        try:
-            if email_type == "verification":
-                subject = "Verify Your Email - Nonchalant Recipe"
-                verification_url = f"{self.base_url}/verify-email?token={token}"
-                
-                html_content = self._create_verification_template(
-                    title="Verify Your Email",
-                    message="Welcome to Nonchalant Recipe! Please verify your email address to start using your account.",
-                    button_text="Verify Email",
-                    verification_url=verification_url
-                )
-            else:  # email change
-                subject = "Confirm Email Change - Nonchalant Recipe"
-                verification_url = f"{self.base_url}/verify-email-change?token={token}"
-                
-                html_content = self._create_verification_template(
-                    title="Confirm Email Change",
-                    message="You have requested to change your email address. Please confirm this change.",
-                    button_text="Confirm Change",
-                    verification_url=verification_url
-                )
-            
-            # Отправляем email через Resend
-            params = {
-                "from": self.from_email,
-                "to": [email],
-                "subject": subject,
-                "html": html_content,
-            }
-            
-            result = resend.Emails.send(params)
-            logger.info(f"✅ Verification email sent to {email}, id: {result['id']}")
-            return True
-            
-        except Exception as e:
-            logger.error(f"❌ Failed to send verification email to {email}: {str(e)}")
-            return False
-    
     def _create_verification_template(self, title: str, message: str, button_text: str, verification_url: str) -> str:
-        """Создает HTML шаблон для email"""
+        """Creates HTML template for emails"""
         return f"""
         <!DOCTYPE html>
         <html>
@@ -91,9 +51,56 @@ class EmailService:
         </body>
         </html>
         """
-    
+
+    async def send_verification_email(self, email: str, token: str, email_type: str = "verification"):
+        """Sends verification email"""
+        try:
+            if email_type == "verification":
+                subject = "Verify Your Email - Nonchalant Recipe"
+                # Points to your Frontend URL
+                verification_url = f"{self.base_url}/verify-email?token={token}"
+                
+                html_content = self._create_verification_template(
+                    title="Verify Your Email",
+                    message="Welcome to Nonchalant Recipe! Please verify your email address to start using your account.",
+                    button_text="Verify Email",
+                    verification_url=verification_url
+                )
+            else:  # email change
+                subject = "Confirm Email Change - Nonchalant Recipe"
+                verification_url = f"{self.base_url}/verify-email-change?token={token}"
+                
+                html_content = self._create_verification_template(
+                    title="Confirm Email Change",
+                    message="You have requested to change your email address. Please confirm this change.",
+                    button_text="Confirm Change",
+                    verification_url=verification_url
+                )
+            
+            # Development Mode Check
+            if settings.ENVIRONMENT == "development":
+                logger.info(f"📧 [MOCK] Sending {email_type} email to: {email}")
+                logger.info(f"📧 [MOCK] Verification URL: {verification_url}")
+                return True
+
+            # Send via Resend
+            params = {
+                "from": self.from_email,
+                "to": [email],
+                "subject": subject,
+                "html": html_content,
+            }
+            
+            result = resend.Emails.send(params)
+            logger.info(f"✅ Verification email sent to {email}, id: {result.get('id', 'unknown')}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to send verification email to {email}: {str(e)}")
+            return False
+
     async def send_welcome_email(self, email: str, username: str):
-        """Отправляет приветственное письмо после подтверждения email"""
+        """Sends welcome email after verification"""
         try:
             html_content = f"""
             <!DOCTYPE html>
@@ -115,13 +122,6 @@ class EmailService:
                     <div class="content">
                         <h2>Hello {username}!</h2>
                         <p>Your email has been successfully verified and your account is now active.</p>
-                        <p>Start exploring amazing recipes with our AI assistant!</p>
-                        <ul>
-                            <li>💡 Get personalized recipe suggestions</li>
-                            <li>⭐ Save your favorite recipes</li>
-                            <li>👥 Share recipes with friends</li>
-                            <li>🍳 Discover new cooking techniques</li>
-                        </ul>
                         <p>Ready to start cooking? <a href="{self.base_url}">Launch the app</a></p>
                     </div>
                 </div>
@@ -129,6 +129,10 @@ class EmailService:
             </html>
             """
             
+            if settings.ENVIRONMENT == "development":
+                logger.info(f"📧 [MOCK] Sending welcome email to: {email}")
+                return True
+
             params = {
                 "from": self.from_email,
                 "to": [email],
@@ -137,12 +141,16 @@ class EmailService:
             }
             
             result = resend.Emails.send(params)
-            logger.info(f"✅ Welcome email sent to {email}, id: {result['id']}")
+            logger.info(f"✅ Welcome email sent to {email}, id: {result.get('id', 'unknown')}")
             return True
             
         except Exception as e:
             logger.error(f"❌ Failed to send welcome email to {email}: {str(e)}")
             return False
 
-# Создаем глобальный экземпляр сервиса
-email_service = EmailService()
+# 1. Create the global instance
+email_service_instance = EmailService()
+
+# 2. Create the standalone export that auth.py imports
+async def send_verification_email(email: str, token: str, email_type: str = "verification"):
+    return await email_service_instance.send_verification_email(email, token, email_type)

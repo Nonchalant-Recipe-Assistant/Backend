@@ -10,6 +10,10 @@ from app.config import settings
 from pydantic import BaseModel
 from app.logger import get_logger 
 
+# Make sure this import matches where your send_verification_email function is located.
+# Based on your pastes, it seems to be in app.services.email_service or app.email_utils
+from app.email_service import send_verification_email 
+
 logger = get_logger(__name__)
 
 router = APIRouter()
@@ -25,12 +29,16 @@ class RegisterRequest(BaseModel):
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 @router.post("/register", response_model=schemas.UserOut)
-def register(user_data: RegisterRequest, db: Session = Depends(get_db)):
+async def register(
+    user_data: RegisterRequest, 
+    background_tasks: BackgroundTasks,  # <--- Added BackgroundTasks
+    db: Session = Depends(get_db)
+):
     logger.info(f"Registration attempt for email: {user_data.email}")
     user_repo = UserRepository(db)
     
     try:
-        # Проверяем, существует ли пользователь
+        # Check if user exists
         db_user = user_repo.get_user_by_email(email=user_data.email)
         if db_user:
             logger.warning(f"Registration failed - email already registered: {user_data.email}")
@@ -39,12 +47,23 @@ def register(user_data: RegisterRequest, db: Session = Depends(get_db)):
                 detail="Email already registered"
             )
         
-        # Создаем пользователя с верификацией email
+        # Create user with verification logic
         user_create = schemas.UserCreate(
             email=user_data.email,
             password=user_data.password
         )
         new_user = user_repo.create_user_with_verification(user=user_create)
+        
+        # --- FIX: Trigger the email sending task ---
+        if new_user.email_verification_token:
+            background_tasks.add_task(
+                send_verification_email,
+                new_user.email,
+                new_user.email_verification_token,
+                "verification"
+            )
+            logger.info(f"Queued verification email for: {user_data.email}")
+        # -------------------------------------------
         
         logger.info(f"User registered successfully with email verification: {user_data.email}")
         return new_user
@@ -85,7 +104,7 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
                 detail="Incorrect email or password",
             )
         
-        # Проверяем, верифицирован ли email (опционально - можно закомментировать если не требуется)
+        # Optional: block login if not verified
         # if not db_user.email_verified:
         #    logger.warning(f"Login failed - email not verified: {login_data.email}")
         #    raise HTTPException(

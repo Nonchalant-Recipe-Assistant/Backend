@@ -33,7 +33,7 @@ services:
       DB_HOST: db
       DB_PORT: 3306
       DB_NAME: nra
-      ENVIRONMENT: development
+      ENVIRONMENT: production
       SECRET_KEY: your-secret-key-for-development-12345
       ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: 30

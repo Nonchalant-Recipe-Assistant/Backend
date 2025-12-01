@@ -8,30 +8,22 @@ import os
 import uuid
 from pathlib import Path
 from app.logger import get_logger
-from app.email_utils import send_verification_email
+from app.email_service import send_verification_email # Ensure this import is correct
 
 logger = get_logger(__name__)
 
 router = APIRouter()
 
-# Директория для хранения аватарок
+# Directory for storing avatars
 AVATAR_UPLOAD_DIR = "uploads/avatars"
 os.makedirs(AVATAR_UPLOAD_DIR, exist_ok=True)
 
-# Разрешенные MIME types для изображений
-ALLOWED_IMAGE_TYPES = {
-    'image/jpeg', 
-    'image/png', 
-    'image/gif',
-    'image/webp'
-}
-
-# Максимальный размер файла (5MB)
+ALLOWED_IMAGE_TYPES = {'image/jpeg', 'image/png', 'image/gif', 'image/webp'}
 MAX_FILE_SIZE = 5 * 1024 * 1024
 
 @router.post("/verify-email")
 async def verify_email(verification_data: EmailVerificationConfirm, db: Session = Depends(get_db)):
-    """Подтверждает email пользователя"""
+    """Confirms user email"""
     logger.info(f"Email verification attempt with token")
     
     user_repo = UserRepository(db)
@@ -53,7 +45,7 @@ async def resend_verification(
     current_user = Depends(get_current_user), 
     db: Session = Depends(get_db)
 ):
-    """Повторно отправляет email для верификации"""
+    """Resends verification email"""
     logger.info(f"Resending verification email for: {current_user.email}")
     
     if current_user.email_verified:
@@ -73,6 +65,16 @@ async def resend_verification(
             detail="Failed to resend verification email"
         )
     
+    # --- FIX: Trigger the email task ---
+    if user.email_verification_token:
+        background_tasks.add_task(
+            send_verification_email,
+            user.email,
+            user.email_verification_token,
+            "verification"
+        )
+    # -----------------------------------
+    
     logger.info(f"Verification email resent for: {user.email}")
     return {"message": "Verification email sent"}
 
@@ -82,7 +84,7 @@ async def update_email(
     current_user = Depends(get_current_user), 
     db: Session = Depends(get_db)
 ):
-    """Инициирует смену email"""
+    """Initiates email change"""
     logger.info(f"Email change request for user {current_user.user_id} to {email_data.new_email}")
     
     user_repo = UserRepository(db)

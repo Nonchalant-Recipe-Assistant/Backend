@@ -46,3 +46,20 @@ class ChatMessage(Base):
     sender_username = Column(String(100), nullable=False)
     message_type = Column(String(50), default="text")
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
+
+class Recipe(Base):
+    __tablename__ = "recipes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(255), index=True)
+    description = Column(Text, nullable=True) # Для полнотекстового поиска
+    instructions = Column(Text, nullable=True)
+    
+    # Поля для фильтрации
+    category = Column(String(100), nullable=True) # Например: "Italian", "Vegan"
+    cooking_time = Column(Integer, nullable=True) # В минутах
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Связь с автором (если нужно по заданию)
+    author_id = Column(Integer, ForeignKey("users.user_id"), nullable=True)

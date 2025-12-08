@@ -9,6 +9,8 @@ from jose import JWTError, jwt
 from app.config import settings
 from pydantic import BaseModel
 from app.logger import get_logger 
+from fastapi import Response
+
 
 # Make sure this import matches where your send_verification_email function is located.
 # Based on your pastes, it seems to be in app.services.email_service or app.email_utils
@@ -156,3 +158,23 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 def read_users_me(current_user: schemas.UserOut = Depends(get_current_user)):
     logger.debug(f"Profile accessed for: {current_user.email}")
     return current_user
+
+@router.post("/set-language")
+def set_language_preference(lang: str, response: Response):
+    """
+    Устанавливает cookie с предпочтительным языком.
+    """
+    if lang not in ["ru", "en"]:
+        # Можно добавить валидацию, но пока просто вернем ошибку или default
+        raise HTTPException(status_code=400, detail="Unsupported language")
+    
+    # Устанавливаем куку 'lang'
+    # max_age = 1 год (в секундах)
+    response.set_cookie(
+        key="lang", 
+        value=lang, 
+        max_age=31536000, 
+        httponly=False, # False, чтобы JS (i18next детектор) мог её прочитать, если нужно, хотя мы читаем её сервером
+        samesite="lax"
+    )
+    return {"message": f"Language set to {lang}"}

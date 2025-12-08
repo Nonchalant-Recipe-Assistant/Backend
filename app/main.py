@@ -1,17 +1,15 @@
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import SessionLocal, engine
-from app.routers import auth, chat
+from app.routers import auth, chat, verification, search
 from app import models
 from app.crud.role import get_roles, create_role
 from app.logger import setup_logging, get_logger
 from app.websocket import endpoints as ws_endpoints
 from app.utils import verify_token
 from datetime import datetime
-from fastapi import WebSocket, WebSocketDisconnect
-from app.routers import auth, verification 
 from app.migrations import migrate_database
-from app.config import settings  # Добавьте этот импорт
+from app.config import settings
 import os
 import json
 import time
@@ -56,16 +54,28 @@ init_roles()
 app = FastAPI(title="Recipe Assistant API")
 
 # CORS middleware - разрешаем всё для разработки
+env_origins = os.getenv("BACKEND_CORS_ORIGINS")
+origins = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://25.29.64.173:3000",
+    "http://25.29.64.173:5173",
+    "http://25.25.240.5:3000",
+    "http://25.25.240.5:5173"
+]
+
+# Если переменная из Docker есть, добавляем её значения в список
+if env_origins:
+    try:
+        # Парсим JSON строку из docker-compose
+        docker_origins = json.loads(env_origins)
+        origins.extend(docker_origins)
+    except json.JSONDecodeError:
+        logger.error("Could not parse BACKEND_CORS_ORIGINS")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000", 
-        "http://localhost:5173",
-        "http://25.29.64.173:3000",
-        "http://25.29.64.173:5173",
-        "http://25.25.240.5:3000", 
-        "http://25.25.240.5:5173"
-    ],  # В продакшене замените на конкретные домены
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -76,6 +86,9 @@ app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(verification.router, prefix="/auth", tags=["auth"])  
 app.include_router(chat.router, prefix="/chat", tags=["chat"])
 app.include_router(ws_endpoints.router, prefix="/api/chat", tags=["chat"])
+# ВАЖНО: Подключаем роутер поиска
+app.include_router(search.router, prefix="/search", tags=["search"])
+
 
 # Health check endpoint
 @app.get("/")

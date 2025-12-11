@@ -58,7 +58,7 @@ def search_data(
     for item in results:
         data_list.append({
             "id": item.id,
-            "name": item.title,  # Frontend ждет поле 'name', а в базе 'title'
+            "name": item.title, 
             "description": item.description,
             "created_at": item.created_at,
             "category": item.category,
